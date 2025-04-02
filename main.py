@@ -24,14 +24,15 @@ hamBands_MHz = {
 def cli(argv):
     prog = os.path.basename(argv[0])
     argv = argv[1:]
-    fullwave = metric = False
+    fullwave = False
+    metric = True
     bands = []
     i = 0
     while i < len(argv):
         if argv[i] == '-f':
             fullwave = True
-        elif argv[i] == '-m':
-            metric = True
+        elif argv[i] == '-i':
+            metric = False
         else:
             try:
                 b = int(argv[i])
@@ -56,10 +57,9 @@ def edges_MHz(prog, bands_MHz):
 
 
 def graph(title, edges_ft, safe_ranges, unknown_ranges, metric, lenQtr_ft):
-    '''Zeichne rote (resonante), grüne (sichere) und graue (nicht relevante) zonen für Drahtlängen'''
     plt.figure(figsize=(12, 3), dpi=300)
     plt.title(title, fontsize=12)
-    plt.xlabel('Drahtlänge (%s)' % ('m' if metric else 'ft'))
+    plt.xlabel('Wire Length in %s' % ('m' if metric else 'ft'))
     plt.yticks([])
     plt.ylim(0, 1)
     plt.grid(True)
@@ -85,7 +85,7 @@ def graph(title, edges_ft, safe_ranges, unknown_ranges, metric, lenQtr_ft):
         mid = (safe_m[0] + safe_m[1]) / 2
         plt.fill([safe_m[0], safe_m[0], safe_m[1], safe_m[1]],
                  [0, 1, 1, 0], 'green', alpha=0.75)
-        label = "%.1f–%.1f %s\n(Mitte: %.1f %s)" % (
+        label = "%.1f–%.1f %s\n(Center: %.1f %s)" % (
             safe_m[0], safe_m[1], 'm' if metric else 'ft',
             mid, 'm' if metric else 'ft'
         )
@@ -107,7 +107,7 @@ def graph(title, edges_ft, safe_ranges, unknown_ranges, metric, lenQtr_ft):
     plt.xlim(0, xMax * 1.05)  # Skala beginnt bei 0
     plt.tight_layout()
     plt.savefig('resonant_frequencies.png')  # Kein bbox_inches='tight'
-    print("Gespeichert als 'resonant_frequencies.png'")
+    print("Saved as 'resonant_frequencies.png'")
 
 
 def high_V(band_MHz, lenMax_ft):
@@ -120,11 +120,12 @@ def high_V(band_MHz, lenMax_ft):
 
 
 def usage(prog):
-    print('Verwendung: %s [-f] [-m] band' % prog)
-    print('            -f für eine ganze Wellenlänge (Standard: halbe Wellenlänge)')
-    print('            -m für metrische Längenmasse')
-    print('            Bänder in Zahlen 160, 80, 60, 40, 30, 20, 17, 15, 12, 11, 10, 6 m')
-    print('            Beispiel: %s -m 40 20 15 10' % prog)
+    print('Usage: %s [-f] [-m] band(s)' % prog)
+    print('       -f for full wave, default: quarter wave')
+    print('       -i for lengths in feet instead of meters')
+    print('       Bands by name 160, 80, 60, 40, 30, 20, 17, 15, 12, 11, 10, 6 m')
+    print('       Example: %s -f -i 40 20 15 10' % prog)
+    print('       Happy calculating & 73 de Ralph HB3XCO')
     sys.exit(1)
 
 
@@ -169,21 +170,21 @@ def main(argv):
     unknown_ranges = find_unknown_ranges(all_ft, safe_ranges)
 
     s = str(bands_m)
-    graph('Längen für %s m' %
+    graph('Wire Lenghts for %s m' %
           s[1:-1], all_ft, safe_ranges, unknown_ranges, metric, lenQtr_ft)
 
     conv = 0.3048 if metric else 1.0
     unit = 'm' if metric else 'ft'
 
-    print("\n🔴 Vermeide resonante Drahtlängen:")
+    print("\n🔴 Don't use these lengths:")
     for r in all_ft:
         print("  %.1f–%.1f %s" % (r[0] * conv, r[1] * conv, unit))
 
-    print("\n🟢 Empfohlene sichere Drahtlängen:")
+    print("\n🟢 Recommended wire lengths:")
     for r in safe_ranges:
         print("  %.1f–%.1f %s" % (r[0] * conv, r[1] * conv, unit))
 
-    print("\n⚪ Weder empfohlen noch resonant:")
+    print("\n⚪ Irrelevant wire lengths:")
     for r in unknown_ranges:
         print("  %.1f–%.1f %s" % (r[0] * conv, r[1] * conv, unit))
 
